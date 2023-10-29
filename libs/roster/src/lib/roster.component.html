@@ -1,0 +1,50 @@
+<!-- roster.component.html -->
+
+<div class="home-page">
+  <div class="banner">
+    <div class="container">
+      <h1 class="logo-font">Conduit Roster</h1>
+    </div>
+  </div>
+
+  <div class="container page">
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Articles</th>
+              <th>Likes</th>
+              <th>First Article Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let stat of (userStats$ | async)">
+              <td><a [href]="stat.profileLink">{{ stat.username }}</a></td>
+              <td>{{ stat.articles }}</td>
+              <td>{{ stat.likes }}</td>
+              <td>{{ stat.firstArticleDate | date }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 
+
+    <div class="home-page">
+        <div class="banner">
+          <div class="container">
+            <h1 class="logo-font">Conduit Roster</h1>
+          </div>
+        </div>
+      
+        <div class="container page">
+            <cdt-article-list></cdt-article-list>
+        </div>
+      </div>
+       -->
