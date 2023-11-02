@@ -18,7 +18,7 @@ export class ArticleService {
     @InjectRepository(Comment)
     private readonly commentRepository: EntityRepository<Comment>,
     @InjectRepository(User)
-    private readonly userRepository: EntityRepository<User>
+    private readonly userRepository: EntityRepository<User>,
   ) {}
 
   async findAll(userId: number, query: Record<string, string>): Promise<IArticlesRO> {
@@ -26,7 +26,6 @@ export class ArticleService {
       ? await this.userRepository.findOne(userId, { populate: ['followers', 'favorites'] })
       : undefined;
     const qb = this.articleRepository.createQueryBuilder('a').select('a.*').leftJoin('a.author', 'u');
-
     if ('tag' in query) {
       qb.andWhere({ tagList: new RegExp(query.tag) });
     }
@@ -53,8 +52,7 @@ export class ArticleService {
     }
 
     qb.orderBy({ createdAt: QueryOrder.DESC });
-    const res = await qb.clone().count('id', true).execute('get');
-    const articlesCount = res.count;
+    const articlesCount = await qb.clone().count('a.id', true).execute('get'); // Removed DISTINCT from count
 
     if ('limit' in query) {
       qb.limit(+query.limit);
@@ -65,8 +63,15 @@ export class ArticleService {
     }
 
     const articles = await qb.getResult();
+    // Populate authors for each article
+    const populatedArticles = await Promise.all(
+      articles.map(async (article) => {
+        await article.authors.init(); // Initialize the authors collection
+        return article.toJSON(user ? user : undefined); // Pass undefined if user is not defined
+      }),
+    );
 
-    return { articles: articles.map((a) => a.toJSON(user!)), articlesCount };
+    return { articles: populatedArticles, articlesCount: articlesCount.count };
   }
 
   async findFeed(userId: number, query: Record<string, string>): Promise<IArticlesRO> {
@@ -76,7 +81,7 @@ export class ArticleService {
     const res = await this.articleRepository.findAndCount(
       { author: { followers: userId } },
       {
-        populate: ['author'],
+        populate: ['author', 'authors'],
         orderBy: { createdAt: QueryOrder.DESC },
         limit: +query.limit,
         offset: +query.offset,
@@ -91,12 +96,20 @@ export class ArticleService {
     const user = userId
       ? await this.userRepository.findOneOrFail(userId, { populate: ['followers', 'favorites'] })
       : undefined;
-    const article = await this.articleRepository.findOne(where, { populate: ['author'] });
+    const article = await this.articleRepository.findOne(where, { populate: ['author', 'authors'] });
+    if (!article) {
+      throw new Error('Article not found');
+    }
+    if (article.lockedBy && article.lockedBy.id !== 0) {
+      console.log('Article is locked by another user');
+      //throw new Error('Article is locked by another user');
+    }
+
     return { article: article && article.toJSON(user) } as IArticleRO;
   }
 
   async addComment(userId: number, slug: string, dto: CreateCommentDto) {
-    const article = await this.articleRepository.findOneOrFail({ slug }, { populate: ['author'] });
+    const article = await this.articleRepository.findOneOrFail({ slug }, { populate: ['author', 'authors'] });
     const author = await this.userRepository.findOneOrFail(userId);
     const comment = new Comment(author, article, dto.body);
     await this.em.persistAndFlush(comment);
@@ -105,7 +118,7 @@ export class ArticleService {
   }
 
   async deleteComment(userId: number, slug: string, id: number): Promise<IArticleRO> {
-    const article = await this.articleRepository.findOneOrFail({ slug }, { populate: ['author'] });
+    const article = await this.articleRepository.findOneOrFail({ slug }, { populate: ['author', 'authors'] });
     const user = await this.userRepository.findOneOrFail(userId);
     const comment = this.commentRepository.getReference(id);
 
@@ -117,8 +130,36 @@ export class ArticleService {
     return { article: article.toJSON(user) };
   }
 
+  async lockArticle(lockedBy: number, lockedAt: string, slug: string): Promise<void> {
+    const article = await this.articleRepository.findOne({ slug }, { populate: ['lockedBy'] });
+    if (!article) {
+      throw new Error('Article not found');
+    }
+    if (article.lockedBy && article.lockedBy.id !== 0) {
+      throw new Error('Article is already locked by another user');
+    }
+    const user = await this.userRepository.findOneOrFail(lockedBy);
+    article.lockedBy = user;
+    article.lockedAt = new Date(lockedAt);
+    await this.em.flush();
+  }
+
+  async unlockArticle(slug: string): Promise<void> {
+    const article = await this.articleRepository.findOne({ slug }, { populate: ['lockedBy'] });
+    if (!article) {
+      throw new Error('Article not found');
+    }
+    if (article.lockedBy) {
+      article.lockedBy = null as any;
+      article.lockedAt = null as any;
+      await this.em.flush();
+    } else {
+      throw new Error('Article is not locked');
+    }
+  }
+
   async favorite(id: number, slug: string): Promise<IArticleRO> {
-    const article = await this.articleRepository.findOneOrFail({ slug }, { populate: ['author'] });
+    const article = await this.articleRepository.findOneOrFail({ slug }, { populate: ['author', 'authors'] });
     const user = await this.userRepository.findOneOrFail(id, { populate: ['favorites', 'followers'] });
 
     if (!user.favorites.contains(article)) {
@@ -131,7 +172,7 @@ export class ArticleService {
   }
 
   async unFavorite(id: number, slug: string): Promise<IArticleRO> {
-    const article = await this.articleRepository.findOneOrFail({ slug }, { populate: ['author'] });
+    const article = await this.articleRepository.findOneOrFail({ slug }, { populate: ['author', 'authors'] });
     const user = await this.userRepository.findOneOrFail(id, { populate: ['followers', 'favorites'] });
 
     if (user.favorites.contains(article)) {
@@ -154,16 +195,22 @@ export class ArticleService {
       { populate: ['followers', 'favorites', 'articles'] },
     );
     const article = new Article(user!, dto.title, dto.description, dto.body);
-    
-    // Ensure tagList is an array of strings
-    article.tagList = Array.isArray(dto.tagList) ? dto.tagList : [dto.tagList];
-
     user?.articles.add(article);
     await this.em.flush();
 
+    // update tags
+    article.tagList = Array.isArray(dto.tagList) ? dto.tagList : [dto.tagList];
+    await this.updateTags(article, article.tagList);
+
+    console.log('NEW ARTICLE' + dto.tagList);
+    console.log('NEW ARTICLE' + article.tagList);
+    return { article: article.toJSON(user!) };
+  }
+
+  private async updateTags(article: Article, taglist: string[]) {
     // Insert new tags into the tag table
-    for (const tag of article.tagList) {
-      const cleanedTags = tag.split(',').map(t => t.trim());
+    for (const tag of taglist) {
+      const cleanedTags = tag.split(',').map((t) => t.trim());
       for (const cleanedTag of cleanedTags) {
         const existingTag = await this.em.findOne(Tag, { tag: cleanedTag });
         if (!existingTag) {
@@ -173,23 +220,38 @@ export class ArticleService {
         }
       }
     }
-
-
-    console.log("NEW ARTICLE" + dto.tagList);
-    console.log("NEW ARTICLE" + article.tagList);
-    return { article: article.toJSON(user!) };
   }
-
-  
 
   async update(userId: number, slug: string, articleData: any): Promise<IArticleRO> {
     const user = await this.userRepository.findOne(
       { id: userId },
       { populate: ['followers', 'favorites', 'articles'] },
     );
-    const article = await this.articleRepository.findOne({ slug }, { populate: ['author'] });
-    wrap(article).assign(articleData);
-    await this.em.flush();
+    const article = await this.articleRepository.findOne({ slug }, { populate: ['author', 'authors'] });
+    if (!article) {
+      throw new Error('Article not found');
+    }
+    if (article.lockedBy && article.lockedBy.id !== 0) {
+      console.log('Article is locked by another user');
+      //throw new Error('Article is locked by another user');
+    }
+    article.lockedBy = user!;
+    article.lockedAt = new Date();
+    // Handle authors
+    if (articleData.authors) {
+      const authors = await this.userRepository.find({
+        email: { $in: articleData.authors },
+      });
+      if (article.authors) {
+        article.authors.set(authors);
+      }
+    }
+
+    if (article) {
+      wrap(article).assign(articleData);
+      await this.em.flush();
+      await this.updateTags(article, article.tagList);
+    }
 
     return { article: article!.toJSON(user!) };
   }
@@ -197,4 +259,7 @@ export class ArticleService {
   async delete(slug: string) {
     return this.articleRepository.nativeDelete({ slug });
   }
+}
+function In(authors: any): import('@mikro-orm/core/typings').FilterValue<string> | undefined {
+  throw new Error('Function not implemented.');
 }

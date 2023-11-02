@@ -26,8 +26,6 @@ describe('TagController', () => {
 
   afterAll(async () => await orm.close(true));
 
-  
-
   describe('findAll', () => {
     it('should return an array of tags', async () => {
       const tags: Tag[] = [];
@@ -40,8 +38,8 @@ describe('TagController', () => {
       tags.push(createTag(1, 'angularjs'));
       tags.push(createTag(2, 'reactjs'));
       //const tags = [createTag(1, 'angularjs'), createTag(2, 'reactjs')];
-      
-      const tagsRO: ITagsRO = { tags: tags.map(tag => tag.tag) };
+
+      const tagsRO: ITagsRO = { tags: tags.map((tag) => tag.tag) };
 
       jest.spyOn(tagService, 'findAll').mockResolvedValue(tagsRO);
 

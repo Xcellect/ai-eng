@@ -4,6 +4,8 @@ import { User } from '../user/user.decorator';
 import { IArticleRO, IArticlesRO, ICommentsRO } from './article.interface';
 import { ArticleService } from './article.service';
 import { CreateArticleDto, CreateCommentDto } from './dto';
+import { UpdateArticleDto } from './dto/update-article.dto';
+import { Observable, from } from 'rxjs';
 
 @ApiBearerAuth()
 @ApiTags('articles')
@@ -51,7 +53,7 @@ export class ArticleController {
   async update(
     @User('id') user: number,
     @Param() params: Record<string, string>,
-    @Body('article') articleData: CreateArticleDto,
+    @Body('article') articleData: UpdateArticleDto,
   ) {
     // Todo: update slug also when title gets changed
     return this.articleService.update(+user, params.slug, articleData);
@@ -84,6 +86,20 @@ export class ArticleController {
   async deleteComment(@User('id') user: number, @Param() params: Record<string, string>) {
     const { slug, id } = params;
     return this.articleService.deleteComment(+user, slug, +id);
+  }
+
+  @Post(':slug/lock')
+  lockArticle(
+    @Body('lockedBy') lockedBy: number,
+    @Body('lockedAt') lockedAt: string,
+    @Param('slug') slug: string,
+  ): Observable<void> {
+    return from(this.articleService.lockArticle(lockedBy, lockedAt, slug));
+  }
+
+  @Post(':slug/unlock')
+  unlockArticle(@Param('slug') slug: string): Observable<void> {
+    return from(this.articleService.unlockArticle(slug));
   }
 
   @ApiOperation({ summary: 'Favorite article' })

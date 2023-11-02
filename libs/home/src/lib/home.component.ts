@@ -5,6 +5,8 @@ import {
   articleListQuery,
   articleListActions,
   ListType,
+  articleQuery,
+  articleActions,
 } from '@realworld/articles/data-access';
 import { selectLoggedIn } from '@realworld/auth/data-access';
 import { CommonModule } from '@angular/common';

@@ -20,8 +20,10 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let stat of (userStats$ | async)">
-              <td><a [href]="stat.profileLink">{{ stat.username }}</a></td>
+            <tr *ngFor="let stat of userStats$ | async">
+              <td>
+                <a [href]="stat.profileLink">{{ stat.username }}</a>
+              </td>
               <td>{{ stat.articles }}</td>
               <td>{{ stat.likes }}</td>
               <td>{{ stat.firstArticleDate | date }}</td>
@@ -32,7 +34,6 @@
     </div>
   </div>
 </div>
-
 
 <!-- 
 

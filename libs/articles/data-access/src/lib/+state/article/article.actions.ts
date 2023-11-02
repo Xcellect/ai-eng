@@ -23,6 +23,12 @@ export const articleActions = createActionGroup({
     addComment: props<{ slug: string }>(),
     addCommentFailure: props<{ error: Error }>(),
     addCommentSuccess: props<{ comment: Comment }>(),
+    lockArticle: props<{ lockedBy: number; lockedAt: string; slug: string }>(),
+    lockArticleSuccess: emptyProps(), // Add this line
+    lockArticleFailure: emptyProps(), // Add this line
+    unlockArticle: props<{ slug: string }>(),
+    unlockArticleSuccess: emptyProps(),
+    unlockArticleFailure: emptyProps(),
     deleteComment: props<{ commentId: number; slug: string }>(),
     deleteCommentFailure: props<{ error: Error }>(),
     deleteCommentSuccess: props<{ commentId: number }>(),

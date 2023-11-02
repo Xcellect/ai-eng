@@ -3,6 +3,7 @@ import {
   Collection,
   Entity,
   EntityDTO,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryKey,
@@ -43,6 +44,15 @@ export class Article {
   @ManyToOne(() => User)
   author: User;
 
+  @ManyToMany(() => User)
+  authors = new Collection<User>(this);
+
+  @ManyToOne(() => User, { nullable: true })
+  lockedBy: User;
+
+  @Property({ nullable: true })
+  lockedAt: Date;
+
   @OneToMany(() => Comment, (comment) => comment.article, { eager: true, orphanRemoval: true })
   comments = new Collection<Comment>(this);
 
@@ -61,6 +71,7 @@ export class Article {
     const o = wrap<Article>(this).toObject() as ArticleDTO;
     o.favorited = user && user.favorites.isInitialized() ? user.favorites.contains(this) : false;
     o.author = this.author.toJSON(user);
+    o.authors = this.authors.getItems().map((author) => author.toJSON(user)); // Map each author to its JSON representation
 
     return o;
   }
@@ -68,6 +79,9 @@ export class Article {
 
 export interface ArticleDTO extends EntityDTO<Article> {
   favorited?: boolean;
+  authors: EntityDTO<User>[];
 }
 
-
+function JoinTable(): (target: Article, propertyKey: 'authors') => void {
+  throw new Error('Function not implemented.');
+}

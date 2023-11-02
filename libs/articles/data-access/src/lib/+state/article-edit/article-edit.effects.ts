@@ -28,3 +28,25 @@ export const publishArticle$ = createEffect(
   },
   { functional: true },
 );
+
+export const editArticle$ = createEffect(
+  (
+    actions$ = inject(Actions),
+    articlesService = inject(ArticlesService),
+    store = inject(Store),
+    router = inject(Router),
+  ) => {
+    return actions$.pipe(
+      ofType(articleEditActions.editArticle),
+      concatLatestFrom(() => store.select(ngrxFormsQuery.selectData)),
+      concatMap(([action, data]) =>
+        articlesService.updateArticle(action.article.slug, action.article).pipe(
+          tap((result) => router.navigate(['article', result.article.slug])),
+          map(() => articleEditActions.editArticleSuccess()),
+          catchError((result) => of(formsActions.setErrors({ errors: result.error.errors }))),
+        ),
+      ),
+    );
+  },
+  { functional: true },
+);

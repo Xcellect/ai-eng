@@ -1,5 +1,4 @@
 import { Profile } from './profile';
-import { User } from './user';
 
 export interface Article {
   slug: string;
@@ -13,8 +12,26 @@ export interface Article {
   favoritesCount: number;
   author: Profile;
   authors: Profile[];
+  authorEmails: string[];
+  lockedBy: Profile;
+  lockedAt: string;
+}
+
+export interface EditArticlePayload {
+  slug: string;
+  title: string;
+  description: string;
+  body: string;
+  tagList: string[];
+  authors: number[];
+  lockedBy: number;
+  lockedAt: string;
 }
 
 export interface ArticleResponse {
   article: Article;
+}
+
+export interface EditArticleResponse {
+  article: EditArticlePayload;
 }

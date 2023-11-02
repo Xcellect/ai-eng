@@ -2,7 +2,8 @@ import { Body, Controller, Delete, Get, HttpException, Param, Post, Put, UsePipe
 import { ValidationPipe } from '../shared/pipes/validation.pipe';
 import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
 import { User } from './user.decorator';
-import { IUserRO } from './user.interface';
+import { IUserRO, IPublicUserRO } from './user.interface';
+
 import { UserService } from './user.service';
 
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -12,6 +13,32 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 @Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Get('user/:username')
+  async findByUsername(@Param('username') username: string): Promise<IPublicUserRO> {
+    const userRO = this.userService.findByUsername(username);
+
+    const publicUserRO: IPublicUserRO = {
+      user: {
+        bio: (await userRO).user.bio,
+        email: (await userRO).user.email,
+        image: (await userRO).user.image ?? '', // Use nullish coalescing operator to provide a default value
+        username: (await userRO).user.username,
+      },
+    };
+
+    return publicUserRO;
+  }
+
+  @Post('user/emailIds')
+  async findMapByEmail(@Body('emails') emails: string[]): Promise<[number, string, string][]> {
+    return this.userService.findUserIdsByEmails(emails);
+  }
+
+  @Post('user/userIds')
+  async findMapByName(@Body('usernames') ids: string[]): Promise<[number, string, string][]> {
+    return this.userService.findUserIdsByNames(ids);
+  }
 
   @Get('user')
   async findMe(@User('email') email: string): Promise<IUserRO> {

@@ -1,4 +1,4 @@
-import { User } from '@realworld/core/api-types';
+import { Article, User } from '@realworld/core/api-types';
 import { createReducer, on, createFeature } from '@ngrx/store';
 import { authActions } from './auth.actions';
 
@@ -6,6 +6,7 @@ export interface AuthState {
   loggedIn: boolean;
   user: User;
   status: Status;
+  articleSlug: string; // Add this line
 }
 
 export enum Status {
@@ -23,6 +24,7 @@ export const authInitialState: AuthState = {
     bio: '',
     image: '',
   },
+  articleSlug: '', // Add this line
 };
 
 export const authFeature = createFeature({
@@ -48,6 +50,13 @@ export const authFeature = createFeature({
     on(authActions.registerFailure, authActions.loginFailure, (state) => ({
       ...state,
       status: Status.INIT,
+    })),
+    on(authActions.setLastEditedArticle, (state, action) => ({
+      ...state,
+      user: {
+        ...state.user,
+        lastEditedArticle: action.articleSlug,
+      },
     })),
   ),
 });

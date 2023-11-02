@@ -14,5 +14,6 @@ export const authActions = createActionGroup({
     registerFailure: props<{ error: Error }>(),
     registerSuccess: props<{ user: User }>(),
     logout: emptyProps(),
+    setLastEditedArticle: props<{ articleSlug: string }>(),
   },
 });

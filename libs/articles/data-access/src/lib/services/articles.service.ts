@@ -1,7 +1,14 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '@realworld/core/http-client';
-import { Article, ArticleResponse, MultipleCommentsResponse, SingleCommentResponse } from '@realworld/core/api-types';
+import {
+  EditArticlePayload,
+  Article,
+  ArticleResponse,
+  EditArticleResponse,
+  MultipleCommentsResponse,
+  SingleCommentResponse,
+} from '@realworld/core/api-types';
 import { ArticleListConfig } from '../+state/article-list/article-list.reducer';
 import { HttpParams } from '@angular/common/http';
 
@@ -45,6 +52,32 @@ export class ArticlesService {
       });
     }
     return this.apiService.post<ArticleResponse, ArticleResponse>('/articles/', { article: article });
+  }
+
+  updateArticle(slug: string, articlePayload: EditArticlePayload): Observable<EditArticleResponse> {
+    return this.apiService.put<EditArticleResponse, EditArticleResponse>('/articles/' + slug, {
+      article: {
+        slug: articlePayload.slug,
+        title: articlePayload.title,
+        authors: articlePayload.authors,
+        description: articlePayload.description,
+        body: articlePayload.body,
+        tagList: articlePayload.tagList,
+        lockedBy: articlePayload.lockedBy,
+        lockedAt: articlePayload.lockedAt,
+      },
+    });
+  }
+
+  lockArticle(lockedBy: number, lockedAt: string, slug: string): Observable<void> {
+    return this.apiService.post<void, { lockedBy: number; lockedAt: string }>(`/articles/${slug}/lock`, {
+      lockedBy,
+      lockedAt,
+    });
+  }
+
+  unlockArticle(slug: string): Observable<void> {
+    return this.apiService.post<void, {}>(`/articles/${slug}/unlock`, {});
   }
 
   // TODO: remove any

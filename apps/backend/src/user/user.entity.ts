@@ -21,7 +21,6 @@ export class User {
   @PrimaryKey({ type: 'number' })
   id!: number;
 
-
   @Property()
   username: string;
 

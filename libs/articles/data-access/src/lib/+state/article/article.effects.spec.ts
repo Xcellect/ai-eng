@@ -32,6 +32,10 @@ const mockArticle: Article = {
     following: false,
     loading: false,
   },
+  authors: null as any,
+  authorEmails: ['stef@jef.wef'],
+  lockedBy: null as any,
+  lockedAt: '',
 };
 
 const mockComments: Array<Comment> = [

@@ -5,7 +5,7 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { authActions, selectUser } from '@realworld/auth/data-access';
 import { SettingsStoreService } from './settings.store';
 import { Store } from '@ngrx/store';
-
+import { articleActions, articleQuery } from '@realworld/articles/data-access/src';
 const structure: Field[] = [
   {
     type: 'INPUT',

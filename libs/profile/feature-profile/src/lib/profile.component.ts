@@ -7,6 +7,7 @@ import { selectUser } from '@realworld/auth/data-access';
 import { RouterModule } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { profileActions, selectProfileState } from '@realworld/profile/data-access';
+import { articleActions, articleQuery } from '@realworld/articles/data-access/src';
 
 @UntilDestroy()
 @Component({

@@ -26,6 +26,28 @@ export class UserService {
     return (await this.userRepository.findOne(findOneOptions))!;
   }
 
+  async findByUsername(username: string): Promise<IUserRO> {
+    const user = await this.userRepository.findOne({ username });
+    if (!user) {
+      const errors = { User: 'not found' };
+      throw new HttpException({ errors }, HttpStatus.NOT_FOUND);
+    }
+    return this.buildUserRO(user);
+  }
+
+  // user.service.ts
+  async findUserIdsByEmails(emails: string[]): Promise<[number, string, string][]> {
+    const users = await this.userRepository.find({ email: { $in: emails } });
+    console.log('USERS', users);
+    return users.map((user) => [user.id, user.username, user.email]);
+  }
+
+  async findUserIdsByNames(usernames: string[]): Promise<[number, string, string][]> {
+    const users = await this.userRepository.find({ username: { $in: usernames } });
+    console.log('USERS', users);
+    return users.map((user) => [user.id, user.username, user.email]);
+  }
+
   async create(dto: CreateUserDto): Promise<IUserRO> {
     // check uniqueness of username/email
     const { username, email, password } = dto;

@@ -1,6 +1,22 @@
 <div class="article-preview">
   <div class="article-meta">
-    <a>
+    <div style="display: flex">
+      <div *ngFor="let author of article.authors">
+        <a>
+          <img [src]="author.image" />
+        </a>
+        <div class="info">
+          <a data-e2e-id="article-author" class="author" [routerLink]="['/profile', author.username]">
+            {{ author.username }}
+          </a>
+          <span class="date">
+            {{ article.createdAt | date : 'longDate' }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <!-- Only current author and name are showing properly -->
+    <!-- <a>
       <img [src]="article.author.image" />
     </a>
     <div class="info">
@@ -10,7 +26,8 @@
       <span class="date">
         {{ article.createdAt | date : 'longDate' }}
       </span>
-    </div>
+    </div> -->
+
     <button
       [ngClass]="{
         'btn-outline-primary': !article.favorited,

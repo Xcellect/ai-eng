@@ -1,3 +1,4 @@
+// src/app/app.component.ts
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
@@ -6,11 +7,11 @@ import { authActions, LocalStorageJwtService, selectLoggedIn, selectUser } from 
 import { filter, take } from 'rxjs/operators';
 import { FooterComponent } from './layout/footer/footer.component';
 import { NavbarComponent } from './layout/navbar/navbar.component';
+import { GlobalRouteListenerService } from './global-route-listener.service';
 
 @Component({
   selector: 'cdt-root',
   standalone: true,
-
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
   imports: [FooterComponent, NavbarComponent, RouterModule, CommonModule],
@@ -20,7 +21,11 @@ export class AppComponent implements OnInit {
   user$ = this.store.select(selectUser);
   isLoggedIn$ = this.store.select(selectLoggedIn);
 
-  constructor(private readonly store: Store, private readonly localStorageJwtService: LocalStorageJwtService) {}
+  constructor(
+    private readonly store: Store,
+    private readonly localStorageJwtService: LocalStorageJwtService,
+    private readonly globalRouteListenerService: GlobalRouteListenerService, // Inject the service
+  ) {}
 
   ngOnInit() {
     this.localStorageJwtService

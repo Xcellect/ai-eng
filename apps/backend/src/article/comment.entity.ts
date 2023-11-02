@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { Collection, Entity, ManyToMany, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { User } from '../user/user.entity';
 import { Article } from './article.entity';
 
@@ -21,6 +21,9 @@ export class Comment {
 
   @ManyToOne(() => User)
   author: User;
+
+  @ManyToMany(() => User)
+  authors = new Collection<User>(this);
 
   constructor(author: User, article: Article, body: string) {
     this.author = author;

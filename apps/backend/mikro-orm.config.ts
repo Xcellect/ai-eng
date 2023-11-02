@@ -38,4 +38,5 @@ export default defineConfig({
   // @ts-expect-error nestjs adapter option
   registerRequestContext: false,
   extensions: [Migrator, EntityGenerator, SeedManager],
+  tsConfigPath: join(__dirname, 'tsconfig.json'), // Add this line
 });

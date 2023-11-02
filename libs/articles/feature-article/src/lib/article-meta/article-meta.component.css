@@ -1,0 +1,32 @@
+.info {
+  display: flex;
+  flex-direction: column;
+}
+
+.author-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+}
+
+.author-image {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.follow-btn {
+  margin-left: 10px;
+}
+
+.modify-buttons,
+.favorite-button {
+  margin-top: 20px;
+}

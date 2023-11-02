@@ -2298,7 +2298,7 @@
     tsconfig-paths "4.2.0"
     yargs "17.7.2"
 
-"@mikro-orm/core@^5.0.0", "@mikro-orm/core@^5.0.0 || ^6.0.0-dev.0", "@mikro-orm/core@^5.7.13", "@mikro-orm/core@~5.7.14":
+"@mikro-orm/core@^5.0.0", "@mikro-orm/core@^5.0.0 || ^6.0.0-dev.0", "@mikro-orm/core@~5.7.14", "@mikro-orm/core@5.7.14":
   version "5.7.14"
   resolved "https://registry.npmjs.org/@mikro-orm/core/-/core-5.7.14.tgz"
   integrity sha512-og2TJ4mRdGKF8ok/xSdGNbznm+WFF6VJosJnneulmY4VirRNfDfp7uNPBOinewigS4Q8Ntdirmponx4KrOoMBg==
@@ -2311,7 +2311,7 @@
     mikro-orm "~5.7.14"
     reflect-metadata "0.1.13"
 
-"@mikro-orm/entity-generator@^5.0.0", "@mikro-orm/entity-generator@^5.7.13":
+"@mikro-orm/entity-generator@^5.0.0", "@mikro-orm/entity-generator@5.7.14":
   version "5.7.14"
   resolved "https://registry.npmjs.org/@mikro-orm/entity-generator/-/entity-generator-5.7.14.tgz"
   integrity sha512-RGMa2T1ql4MsYqhD3WXWHwdZohL2t6Ff9fuK8myhtFelfqWCkrekMo8K7QMgLXZ05Ojz3o8VTRFrZ1pgBstjAA==

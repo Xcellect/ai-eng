@@ -2,12 +2,19 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { Observable, forkJoin } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
-import { articleListInitialState, articleListQuery, articleListActions, ListType } from '@realworld/articles/data-access';
+import {
+  articleListInitialState,
+  articleListQuery,
+  articleListActions,
+  ListType,
+  articleQuery,
+  articleActions,
+} from '@realworld/articles/data-access';
 import { selectLoggedIn } from '@realworld/auth/data-access';
 import { Store } from '@ngrx/store';
 import { ApiService } from '@realworld/core/http-client';
 import { RosterStoreService } from './roster.store';
-import { CommonModule } from '@angular/common';  // Import CommonModule
+import { CommonModule } from '@angular/common'; // Import CommonModule
 
 interface UserStat {
   username: string;
@@ -23,7 +30,7 @@ interface UserStat {
   standalone: true,
   templateUrl: './roster.component.html',
   styleUrls: ['./roster.component.css'],
-  imports: [CommonModule],  // Add CommonModule to imports
+  imports: [CommonModule], // Add CommonModule to imports
   providers: [RosterStoreService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,7 +42,7 @@ export class RosterComponent implements OnInit {
   constructor(
     private readonly store: Store,
     private apiService: ApiService,
-    private readonly rosterStore: RosterStoreService
+    private readonly rosterStore: RosterStoreService,
   ) {}
 
   ngOnInit() {
@@ -45,17 +52,15 @@ export class RosterComponent implements OnInit {
       .subscribe((isLoggedIn) => {
         this.isAuthenticated = isLoggedIn;
         this.userStats$ = this.getArticles();
-        this.userStats$.subscribe((userStats) => {
-          // console.log(userStats);  // Check if userStats is correct here
-        });
+        this.userStats$.subscribe((userStats) => {});
       });
   }
-  
+
   setListTo(type: ListType = 'ALL') {
     this.store.dispatch(
       articleListActions.setListConfig({
         config: { ...articleListInitialState.listConfig, type },
-      })
+      }),
     );
   }
 
@@ -80,7 +85,7 @@ export class RosterComponent implements OnInit {
               authorStat.likes += favoritesCount;
               authorStat.articles += 1;
               authorStat.firstArticleDate = Math.min(parseInt(authorStat.firstArticleDate), createdAt).toString();
-            })
+            }),
           );
         });
 
@@ -95,10 +100,9 @@ export class RosterComponent implements OnInit {
               likes: stat.likes,
               firstArticleDate: stat.firstArticleDate,
             }));
-          })
+          }),
         );
-        
-      })
+      }),
     );
   }
 }

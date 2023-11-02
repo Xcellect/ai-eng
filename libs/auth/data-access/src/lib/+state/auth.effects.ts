@@ -80,3 +80,21 @@ export const register$ = createEffect(
   },
   { functional: true },
 );
+
+export const setLastEditedArticle$ = createEffect(
+  (actions$ = inject(Actions)) => {
+    return actions$.pipe(
+      ofType(authActions.setLastEditedArticle),
+      tap((action) => {
+        try {
+          localStorage.setItem('lastEditedArticle', action.articleSlug);
+          console.log('Success: Last edited article slug saved to local storage.');
+          //console.log('LAST EDITED',localStorage.getItem('lastEditedArticle'));
+        } catch (error) {
+          console.error('Error: Failed to save last edited article slug to local storage.', error);
+        }
+      }),
+    );
+  },
+  { functional: true, dispatch: false },
+);

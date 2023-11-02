@@ -133,3 +133,89 @@ export const deleteArticleSuccess$ = createEffect(
   },
   { functional: true, dispatch: false },
 );
+
+export const lockArticle$ = createEffect(
+  (
+    actions$ = inject(Actions),
+    articlesService = inject(ArticlesService),
+    store = inject(Store),
+    router = inject(Router),
+  ) => {
+    return actions$.pipe(
+      ofType(articleActions.lockArticle),
+      concatMap(({ lockedBy, lockedAt, slug }) =>
+        articlesService.lockArticle(lockedBy, lockedAt, slug).pipe(
+          map(() => articleActions.lockArticleSuccess()),
+          catchError((error) => of(articleActions.lockArticleFailure())),
+        ),
+      ),
+    );
+  },
+  { functional: true },
+);
+
+export const lockArticleSuccess$ = createEffect(
+  (actions$ = inject(Actions), router = inject(Router)) => {
+    return actions$.pipe(
+      ofType(articleActions.lockArticleSuccess),
+      tap(() => {
+        // You can add any additional logic here if needed
+      }),
+      map(() => articleActions.loadArticle({ slug: '' })), // Assuming you want to reload the article after locking
+    );
+  },
+  { functional: true },
+);
+
+export const lockArticleFailure$ = createEffect(
+  (actions$ = inject(Actions)) => {
+    return actions$.pipe(
+      ofType(articleActions.lockArticleFailure),
+      map(() => formsActions.setErrors({ errors: {} })),
+    );
+  },
+  { functional: true },
+);
+
+export const unlockArticle$ = createEffect(
+  (
+    actions$ = inject(Actions),
+    articlesService = inject(ArticlesService),
+    store = inject(Store),
+    router = inject(Router),
+  ) => {
+    return actions$.pipe(
+      ofType(articleActions.unlockArticle),
+      concatMap(({ slug }) =>
+        articlesService.unlockArticle(slug).pipe(
+          map((slug) => articleActions.unlockArticleSuccess()),
+          catchError(() => of(articleActions.unlockArticleFailure())),
+        ),
+      ),
+    );
+  },
+  { functional: true },
+);
+
+export const unlockArticleSuccess$ = createEffect(
+  (actions$ = inject(Actions), router = inject(Router)) => {
+    return actions$.pipe(
+      ofType(articleActions.unlockArticleSuccess),
+      tap(() => {
+        // You can add any additional logic here if needed
+      }),
+      map(() => articleActions.loadArticle({ slug: '' })), // Assuming you want to reload the article after unlocking
+    );
+  },
+  { functional: true },
+);
+
+export const unlockArticleFailure$ = createEffect(
+  (actions$ = inject(Actions)) => {
+    return actions$.pipe(
+      ofType(articleActions.unlockArticleFailure),
+      map(() => formsActions.setErrors({ errors: {} })),
+    );
+  },
+  { functional: true },
+);
