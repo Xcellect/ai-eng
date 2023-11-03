@@ -3,5 +3,5 @@ export class UpdateArticleDto {
   readonly description: string;
   readonly body: string;
   readonly tagList: string[];
-  readonly authors?: string[];
+  readonly authors?: number[];
 }

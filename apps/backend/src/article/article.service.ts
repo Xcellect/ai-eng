@@ -195,10 +195,18 @@ export class ArticleService {
       { populate: ['followers', 'favorites', 'articles'] },
     );
     const article = new Article(user!, dto.title, dto.description, dto.body);
+
+    // Find authors by ID and add them to the article's authors collection
+    const authorIds = dto.authors || [];
+    const authors = await this.userRepository.find({
+      id: { $in: authorIds },
+    });
+    article.authors.set(authors);
+
     user?.articles.add(article);
     await this.em.flush();
 
-    // update tags
+    // Update tags
     article.tagList = Array.isArray(dto.tagList) ? dto.tagList : [dto.tagList];
     await this.updateTags(article, article.tagList);
 

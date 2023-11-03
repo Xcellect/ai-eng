@@ -45,13 +45,16 @@ export class ArticlesService {
     );
   }
 
-  publishArticle(article: Article): Observable<ArticleResponse> {
+  publishArticle(article: EditArticlePayload): Observable<EditArticleResponse> {
     if (article.slug) {
-      return this.apiService.put<ArticleResponse, ArticleResponse>('/articles/' + article.slug, {
-        article: article,
+      return this.apiService.put<EditArticleResponse, EditArticleResponse>('/articles/' + article.slug, {
+        article: { ...article, authors: article.authors },
       });
     }
-    return this.apiService.post<ArticleResponse, ArticleResponse>('/articles/', { article: article });
+    console.log('>>>>>>>>>>>> ARTICLE BEFORE API CALL: ', article);
+    return this.apiService.post<EditArticleResponse, EditArticleResponse>('/articles/', {
+      article: { ...article, authors: article.authors },
+    });
   }
 
   updateArticle(slug: string, articlePayload: EditArticlePayload): Observable<EditArticleResponse> {

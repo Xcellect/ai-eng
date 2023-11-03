@@ -4,8 +4,9 @@ import { OnDestroy } from '@angular/core';
 import { Validators } from '@angular/forms';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { Store } from '@ngrx/store';
+import { EditArticlePayload } from '@realworld/core/api-types';
 import { articleEditActions, articleQuery } from '@realworld/articles/data-access';
-import { Article, EditArticlePayload } from '@realworld/core/api-types/src/lib/article';
+import { Article, ArticleResponse } from '@realworld/core/api-types/src/lib/article';
 import { filter, startWith, switchMap, take } from 'rxjs/operators';
 import { ApiService } from '@realworld/core/http-client';
 import { combineLatest, of, Subscription } from 'rxjs';
@@ -46,6 +47,7 @@ const structure: Field[] = [
     validator: [],
   },
 ];
+let isNewArticle = false;
 let newArticle: Article = {} as Article;
 let emails: string[] = [];
 let authorEmailMap = new Map<string, [string, number]>();
@@ -89,11 +91,12 @@ export class ArticleEditComponent implements OnInit, OnDestroy {
     const currentUrl = this.router.url;
     // Handle the URL
     if (currentUrl === '/editor') {
+      isNewArticle = true;
       this.store
         .select(articleQuery.selectData)
         .pipe(untilDestroyed(this))
         .subscribe((article) => this.store.dispatch(formsActions.setData({ data: article })));
-      //window.location.reload();
+      return;
     }
     const regex = /^\/editor\/([^\/]+)$/;
     const match = currentUrl.match(regex);
@@ -110,12 +113,14 @@ export class ArticleEditComponent implements OnInit, OnDestroy {
         .subscribe((event: NavigationEnd) => {
           // Handle the URL
           if (event.url === '/editor') {
+            isNewArticle = true;
             this.store.dispatch(formsActions.setData({ data: {} }));
             const lastEditedArticleSlug = localStorage.getItem('lastEditedArticle')!;
             this.store.dispatch(articleActions.unlockArticle({ slug: lastEditedArticleSlug }));
             window.location.reload();
             return;
           }
+          isNewArticle = false;
           this.store
             .select(articleQuery.selectData)
             .pipe(untilDestroyed(this))
@@ -126,7 +131,7 @@ export class ArticleEditComponent implements OnInit, OnDestroy {
                 (author, index, self) => index === self.findIndex((t) => t?.username === author?.username),
               );
               // get author usernames
-              const authorUsernames = authors.map((author) => author?.username);
+              const authorUsernames = authors.map((author: { username: string }) => author?.username);
               // call getAuthorEmails() here and wait for it to complete
               await this.getAuthorEmails(authorUsernames);
               // Get current user's email and id
@@ -135,6 +140,7 @@ export class ArticleEditComponent implements OnInit, OnDestroy {
               // use this store dispatch to get the auth state and then get the user id using the authorEmailMap
               const currentUserId = authorEmailMap.get(currentUser.username)?.[1];
               const currentUsername = authorEmailMap.get(currentUser.username)?.[0];
+
               console.log(authorEmailMap);
               const userIdString = localStorage.getItem('currentUserid');
               const userId = Number(userIdString);
@@ -144,16 +150,44 @@ export class ArticleEditComponent implements OnInit, OnDestroy {
               } else {
                 console.log('User ID is not a valid number');
               }
-              if (!isNaN(userId) && slug !== undefined && slug !== null && slug !== '' && article) {
-                // Lock the article
-                this.store.dispatch(
-                  articleActions.lockArticle({
-                    lockedBy: userId,
-                    lockedAt: new Date().toISOString(),
-                    slug: slug,
-                  }),
-                );
-              }
+              this.apiService
+                .get(`/articles/${slug}`)
+                .pipe(take(1))
+                .toPromise()
+                .then((response) => {
+                  const articleResponse = response as ArticleResponse; // Assert the type of the response
+                  // Extract the lockedBy value from the article
+                  let latestLockedBy = JSON.stringify(articleResponse.article.lockedBy);
+                  const regex = /"id":(\d+)/;
+                  const match = latestLockedBy?.match(regex);
+                  if (match) {
+                    latestLockedBy = match[1];
+                  }
+                  console.log('>>>>>>>>>>>> LOCKEDBY: ', latestLockedBy);
+                  // Compare with the current user ID and unlock the article if they match
+                  if (
+                    slug !== undefined &&
+                    latestLockedBy !== undefined &&
+                    latestLockedBy !== null &&
+                    latestLockedBy !== '' &&
+                    userId !== undefined &&
+                    userId !== null &&
+                    userId !== 0 &&
+                    latestLockedBy !== userId.toString()
+                  ) {
+                    this.store.dispatch(
+                      articleActions.lockArticle({
+                        lockedBy: userId,
+                        lockedAt: new Date().toISOString(),
+                        slug: slug,
+                      }),
+                    );
+                  }
+                })
+                .catch((error) => {
+                  console.error('Failed to get article by slug', error);
+                });
+
               // Start the inactivity timer
               this.startInactivityTimer();
 
@@ -171,6 +205,12 @@ export class ArticleEditComponent implements OnInit, OnDestroy {
               localStorage.setItem('lastEditedArticle', slug);
             });
         });
+    } else {
+      isNewArticle = true;
+      this.store
+        .select(articleQuery.selectData)
+        .pipe(untilDestroyed(this))
+        .subscribe((article) => this.store.dispatch(formsActions.setData({ data: article })));
     }
   }
 
@@ -259,18 +299,26 @@ export class ArticleEditComponent implements OnInit, OnDestroy {
       articlePayload != undefined &&
       articlePayload?.title != '' &&
       articlePayload?.description != '' &&
-      articlePayload?.body != '' &&
-      slug !== undefined &&
-      slug !== null &&
-      slug !== ''
+      articlePayload?.body != ''
     ) {
-      console.log('articlePayload', articlePayload);
-      authorIds = [...new Set(authorIds)].filter((id) => id !== 0);
+      const currentUserInSubmit = localStorage.getItem('currentUserid')?.replace(/\s+/g, '');
+      // convert currentUserInSubmit to number
+      const currentUserInSubmitNumber = Number(currentUserInSubmit);
+      let newAuthorIds: number[] = [];
+      console.log(authorIds);
+
+      if (currentUserInSubmitNumber != null && newAuthorIds != null) {
+        newAuthorIds = [...authorIds, currentUserInSubmitNumber];
+        newAuthorIds = [...new Set(newAuthorIds)].filter((id) => id !== 0);
+      } else if (currentUserInSubmitNumber != null && newAuthorIds == null) {
+        newAuthorIds = [currentUserInSubmitNumber];
+      }
+
       let payload: { article: EditArticlePayload }; // Declare the type of the payload variable
       payload = {
         article: {
           slug: slug,
-          authors: authorIds,
+          authors: newAuthorIds,
           title: articlePayload?.title,
           description: articlePayload?.description,
           body: articlePayload?.body,
@@ -279,13 +327,29 @@ export class ArticleEditComponent implements OnInit, OnDestroy {
           lockedAt: new Date().toISOString(),
         },
       };
+      console.log('////////////////////////////////////////////////////////articlePayload', payload);
 
-      this.store.dispatch(articleEditActions.editArticle(payload));
-      this.store.dispatch(articleActions.unlockArticle({ slug: slug }));
-      // Pass the correct payload
-    } else {
-      this.store.dispatch(articleEditActions.publishArticle());
+      if (!isNewArticle) {
+        this.store.dispatch(articleEditActions.editArticle(payload));
+      } else {
+        if (payload.article.slug != '') payload.article.slug = '';
+        this.store.dispatch(articleEditActions.publishArticle(payload));
+        isNewArticle = false;
+      }
+
+      console.log('unlocking article');
+      if (
+        payload.article.slug != '' &&
+        localStorage.getItem('currentUserid') != localStorage.getItem('latestLockedBy') &&
+        localStorage.getItem('currentUserid') != null &&
+        localStorage.getItem('latestLockedBy') != null
+      )
+        this.store.dispatch(articleActions.unlockArticle({ slug: slug }));
     }
+  }
+  private appendRandomString(inputString: string) {
+    const randomString = Math.random().toString(36).substring(2, 7);
+    return `${inputString}-${randomString}`;
   }
 
   private startInactivityTimer() {

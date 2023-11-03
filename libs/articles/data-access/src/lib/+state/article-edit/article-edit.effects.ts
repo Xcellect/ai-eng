@@ -17,8 +17,8 @@ export const publishArticle$ = createEffect(
     return actions$.pipe(
       ofType(articleEditActions.publishArticle),
       concatLatestFrom(() => store.select(ngrxFormsQuery.selectData)),
-      concatMap(([_, data]) =>
-        articlesService.publishArticle(data).pipe(
+      concatMap(([action, data]) =>
+        articlesService.publishArticle(action.article).pipe(
           tap((result) => router.navigate(['article', result.article.slug])),
           map(() => articleEditActions.publishArticleSuccess()),
           catchError((result) => of(formsActions.setErrors({ errors: result.error.errors }))),

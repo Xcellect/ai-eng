@@ -54,7 +54,12 @@ export class GlobalRouteListenerService {
           console.log('>>>>>>>>>>>> CURR USER: ', currentUserid);
           console.log('>>>>>>>>>>>> LAST EDITED ARTICLE: ', lastEditedArticleSlug);
           // Call API to get article by slug
-          if (lastEditedArticleSlug && currentUserid) {
+          if (
+            lastEditedArticleSlug != null &&
+            lastEditedArticleSlug != undefined &&
+            lastEditedArticleSlug != '' &&
+            currentUserid
+          ) {
             this.apiService
               .get(`/articles/${lastEditedArticleSlug}`)
               .pipe(take(1))
@@ -68,15 +73,16 @@ export class GlobalRouteListenerService {
                 if (match) {
                   latestLockedBy = match[1];
                 }
+                console.log('>>>>>>>>>>>> LOCKEDBY: ', latestLockedBy);
+                localStorage.setItem('latestLockedBy', JSON.stringify(latestLockedBy));
                 // Compare with the current user ID and unlock the article if they match
                 if (
                   lastEditedArticleSlug !== undefined &&
                   latestLockedBy &&
                   currentUserid &&
-                  latestLockedBy === currentUserid
+                  latestLockedBy === currentUserid!
                 ) {
-                  console.log('>>>>>>>>>>>> UNLOCKING ARTICLE: ', lastEditedArticleSlug);
-                  this.store.dispatch(articleActions.unlockArticle({ slug: lastEditedArticleSlug }));
+                  this.store.dispatch(articleActions.unlockArticle({ slug: lastEditedArticleSlug as string }));
                 }
               })
               .catch((error) => {

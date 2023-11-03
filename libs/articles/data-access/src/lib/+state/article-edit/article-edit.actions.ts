@@ -4,7 +4,7 @@ import { EditArticlePayload } from '@realworld/core/api-types/src/lib/article';
 export const articleEditActions = createActionGroup({
   source: 'Article Edit',
   events: {
-    publishArticle: emptyProps(),
+    publishArticle: props<{ article: EditArticlePayload }>(),
     publishArticleSuccess: emptyProps(),
     editArticle: props<{ article: EditArticlePayload }>(),
     editArticleSuccess: emptyProps(),
